@@ -12,6 +12,9 @@
  * as input to this program. The more interesting the maze, the more points given.
  */
 
+/**
+ * TODO
+ */
 (function() {			// define everything in a scoping function instead of clobbering window
     var canvas;			// maze canvas element
     var ctx;			// canvas context
@@ -26,10 +29,14 @@
     var dx = w + w;		// how much x is changed when an arrow key is pressed
     var dy = h + h;		// how much y is changed when an arrow key is pressed
 
-    var trail = "Blue";		// trail color
-    var marker = "Purple";	// marker color
-
     var path = [];		// path taken through maze
+
+    var marker = "Purple";	// marker color
+    var trail = "Yellow";	// trail color
+
+    var Direction = {"left":0,"up":1,"right":2,"down":3};
+	// exit coordinates TODO evaluate instead of static
+    var Exit = {"x":797,"y":799};
 
     /**
      * START
@@ -62,28 +69,36 @@
     }
 
     /**
+     * compare returns true if the pixel is the same color as the rgba array.
+     * rgba = [red,green,blue,alpha]
+     */
+    var compare = function(pixel,rgba) {
+	return pixel[0] === rgba[0] && pixel[1] === rgba[1] && pixel[2] === rgba[2] && pixel[3] === rgba[3];
+    }
+
+    /**
      * doKeyDown moves the marker when an arrow key is pressed
      * or requests a hint.
      */
     var doKeyDown = function(evt) {
-	hint(false); // Hide hint on next keypress
+        hint(false);	// Hide hint on next keypress
         switch (evt.keyCode) {
-        case 38:  // Up arrow was pressed
-            move("up");
+        case 38:	// Up arrow was pressed
+            move(Direction["up"], trail);
             break;
-        case 40:  // Down arrow was pressed
-            move("down");
+        case 40:	// Down arrow was pressed
+            move(Direction["down"], trail);
             break;
-        case 37:  // Left arrow was pressed
-            move("left");
+        case 37:	// Left arrow was pressed
+            move(Direction["left"], trail);
             break;
-        case 39:  // Right arrow was pressed
-            move("right");
+        case 39:	// Right arrow was pressed
+            move(Direction["right"], trail);
             break;
-        case 72: // 'h' was pressed
+        case 72:	// 'h' was pressed
             hint(true);
             break;
-	}
+        }
     }
 
     /**
@@ -98,11 +113,16 @@
     }
 
     /**
-     * TODO
+     * hint toggles hint.
+     *
+     * @param show display hint when true
      */
     var hint = function(show) {
         var msg;
         if(show) {
+            var tmpTrail = trail;
+            tremaux(Direction["up"]);
+	    trail = tmpTrail;
             msg = "TODO";
         } else {
             msg = "";
@@ -112,54 +132,62 @@
 
     /**
      * isWall returns true if there is a maze wall in the given direction.
+     *
+     * @param direction the direction to check for a wall
      */
     var isWall = function(direction) {
         var gap = 2; // gap between marker and wall
         switch(direction) {
-        case "up":
+        case Direction["up"]:
             var pixel = ctx.getImageData(x, y - gap, 1, 1).data;
             break;
-        case "down":
+        case Direction["down"]:
             var pixel = ctx.getImageData(x, y + h + gap, 1, 1).data;
             break;
-        case "left":
+        case Direction["left"]:
             var pixel = ctx.getImageData(x - gap, y, 1, 1).data;
             break;
-        case "right":
+        case Direction["right"]:
             var pixel = ctx.getImageData(x + w + gap, y, 1, 1).data;
             break;
         default:
             console.log("isWaLL: " + direction + " is an invalid direction");
-	    return;
+            return;
         }
         // Return true if pixel is black
-        return pixel[0] === 0 && pixel[1] === 0 && pixel[2] === 0 && pixel[3] === 255;
+        return compare(pixel,[0,0,0,255]);
+        //return false; // TODO Disable collision detection for debugging
     }
 
     /**
-     * move the marker in the given direction if there is no wall in the way.
+     * move the marker in the given direction if there is no maze border or wall
+     * in the way.
+     *
+     * @param direction the direction to move
+     * @param trail a CSS color value, gradient, or pattern object describing
+     * the trail to leave behind
      */
-    var move = function(direction) {
-        // Draw the previous marker blue
+    var move = function(direction, trail) {
+        // Leave a trail of previous markers
         draw(trail);
         switch(direction) {
-        case "up":
-            if (y - dy > 0 && !isWall("up")) {
+        case Direction["up"]:
+            if (y - dy > 0 && !isWall(direction)) {
                 y -= dy;
             }
             break;
-        case "down":
-            if (y + h + dy < canvas.width && !isWall("down")) {
+        case Direction["down"]:
+            if (y + h + dy < canvas.width && !isWall(direction)) {
                 y += dy;
             }
             break;
-        case "left":
-            if (x - dx > 0 && !isWall("left")) {
+        case Direction["left"]:
+            if (x - dx > 0 && !isWall(direction)) {
                 x -= dx;
             }
             break;
-        case "right":
-            if (x + w + dx < canvas.width && !isWall("right")) {
+        case Direction["right"]:
+            if (x + w + dx < canvas.width && !isWall(direction)) {
                 x += dx;
             }
             break;
@@ -168,48 +196,49 @@
             return;
         }
 
-	// record path taken through the maze
-	// TODO: reduce potential array length by only recording when the current
-	// position is different from the previous position. They would be the same
-	// if a wall was in the way.
-	path.push(x);
-	path.push(y);
+        // Record path taken through the maze
+        // TODO: reduce potential array length by only recording when the current
+        // position is different from the previous position. They would be the same
+        // if a wall was in the way.
+	// TODO Move this to doKeyDown function
+        path.push(x);
+        path.push(y);
 
-        // Draw the marker purple
+        // Draw the marker a different color so it can be distinguished from the trail
         draw(marker);
     }
 
     /**
      * Tremaux's maze solving algorithm. A direction is chosen and the path is marked
-     * with one color if this is the first traversal or a second color if this is
-     * the second traversal. At intersections, a path that hasn't been taken is chosen
-     * at random. If there is no unmarked path and the current path has only been marked
-     * once turn around, else choose a path with the fewest marks. Paths marked exactly
+     * with one color if this is the first traversal, or a second color if this is
+     * the second traversal. At intersections, a path that hasn't been taken is chosen.
+     * If there is no unmarked path and the current path has only been marked once,
+     * turn around. Otherwise, choose a path with the fewest marks. Paths marked exactly
      * once lead back to the start.
+     *
+     * @param direction the direction to start tracing
      */
-    var tremaux = function(dir) {
-        if(!isWall(dir)) {
-            //move(dir);
-        } else {
-            switch(dir) {
-            case "up":
-                dir = "right";
-                break;
-            case "right":
-                dir = "left"
-                      break;
-            case "left":
-                dir = "down";
-                break;
-            case "down":
-                dir = "up";
-                break;
-            default:
-                console.log("pathFinder: " + dir + " is an invalid direction");
-		return;
-            }
+    var tremaux = function(direction) {
+        var markedOnce = function(pixel) {
+            return compare(pixel,[0,255,0,255]);
         }
-        pathFinder(dir);
+        var markedTwice = function(pixel) {
+            return compare(pixel,[255,0,0,255]);
+        }
+	var onceTrail = "Green";			// first traversal color
+	var twiceTrail = "Red";				// second traversal color
+        var relativeL = (direction + 4 - 1) % 4;	// relative left
+        var relativeR = (direction + 4 + 1) % 4;	// relative right
+
+        // Base case: stop tracing at the maze exit
+        if(x === Exit['x'] && y === Exit['y']) return;
+        while(!isWall(direction)) {
+            move(direction, onceTrail);
+        }
+	if(isWall(relativeL)){}
+
+
+        alert("");
     }
 
 })();
