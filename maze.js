@@ -18,6 +18,7 @@
     var img;			// maze image
     //var worker;		// TODO
     //var threaded = true;	// TODO
+
     var w = 4;			// width of marker
     var h = 4;			// height of marker
     var x = 5;			// marker x position
@@ -51,36 +52,35 @@
         // Draw maze
         ctx.drawImage(img,0,0);
 
-        //pathFinder();
-
         // Listen for arrow keys
         window.addEventListener('keydown',doKeyDown,true);
     }
 
     /**
-     * doKeyDown moves the marker when an arrow key is pressed.
+     * doKeyDown moves the marker when an arrow key is pressed
+     * if there is no wall in the way.
      */
     var doKeyDown = function(evt) {
         // Draw previous markers blue
         draw("Blue");
         switch (evt.keyCode) {
         case 38:  /* Up arrow was pressed */
-            if (y - dy > 0) {
+            if (y - dy > 0 && !isWall("up")) {
                 y -= dy;
             }
             break;
         case 40:  /* Down arrow was pressed */
-            if (y + h + dy < img.width) {
+            if (y + h + dy < img.width && !isWall("down")) {
                 y += dy;
             }
             break;
         case 37:  /* Left arrow was pressed */
-            if (x - dx > 0) {
+            if (x - dx > 0 && !isWall("left")) {
                 x -= dx;
             }
             break;
         case 39:  /* Right arrow was pressed */
-            if (x + w + dx < img.width) {
+            if (x + w + dx < img.width && !isWall("right")) {
                 x += dx;
             }
             break;
@@ -101,31 +101,28 @@
     }
 
     /**
-     * TODO
+     * isWall returns true if there is a maze wall in the direction indicated.
      */
-    var pathFinder = function() {
-        // check 2 pixels away
-        // if wall in front check right for wall
-        // if wall right check left for wall
-        // if wall left turn around
-        // advance
-	var dir = "up";
-        var pixels = ctx.getImageData(0,0,canvas.width,canvas.height).data;
-        while(true) {
-            switch(dir) {
-            case "up":
-		    console.log(pixels[x][y]);
-                break;
-            case "down":
-                break;
-            case "left":
-                break;
-            case "right":
-                break;
-	    default:
-		return;
-            }
+    var isWall = function(direction) {
+        var gap = 2; // gap between marker and wall
+        switch(direction) {
+        case "up":
+            var pixel = ctx.getImageData(x, y - gap, 1, 1).data;
+            break;
+        case "down":
+            var pixel = ctx.getImageData(x, y + h + gap, 1, 1).data;
+            break;
+        case "left":
+            var pixel = ctx.getImageData(x - gap, y, 1, 1).data;
+            break;
+        case "right":
+            var pixel = ctx.getImageData(x + w + gap, y, 1, 1).data;
+            break;
+        default:
+            console.log(direction + " is an invalid direction");
+            break;
         }
+        return pixel[0] === 0 && pixel[1] === 0 && pixel[2] === 0 && pixel[3] === 255;
     }
 
 })();
