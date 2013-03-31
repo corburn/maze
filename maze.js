@@ -26,6 +26,9 @@
     var dx = w + w;		// how much x is changed when an arrow key is pressed
     var dy = h + h;		// how much y is changed when an arrow key is pressed
 
+    var trail = "Blue";
+    var marker = "Purple";
+
     /**
      * START
      *
@@ -61,16 +64,16 @@
      */
     var doKeyDown = function(evt) {
         switch (evt.keyCode) {
-        case 38:  /* Up arrow was pressed */
+        case 38:  // Up arrow was pressed
             move("up");
             break;
-        case 40:  /* Down arrow was pressed */
+        case 40:  // Down arrow was pressed
             move("down");
             break;
-        case 37:  /* Left arrow was pressed */
+        case 37:  // Left arrow was pressed
             move("left");
             break;
-        case 39:  /* Right arrow was pressed */
+        case 39:  // Right arrow was pressed
             move("right");
             break;
         }
@@ -118,7 +121,7 @@
      */
     var move = function(direction) {
 	    // Draw the previous marker blue
-        draw("Blue");
+        draw(trail);
         switch(direction) {
         case "up":
             if (y - dy > 0 && !isWall("up")) {
@@ -145,15 +148,15 @@
             break;
         }
 	// Draw the marker purple
-	draw("Purple");
+	draw(marker);
     }
 
     /**
      * TODO
      */
-    var pathFinder = function(dir) {
+    var tremaux = function(dir) {
         if(!isWall(dir)) {
-            move(dir);
+            //move(dir);
         } else {
             switch(dir) {
             case "up":
