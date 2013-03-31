@@ -26,8 +26,8 @@
     var dx = w + w;		// how much x is changed when an arrow key is pressed
     var dy = h + h;		// how much y is changed when an arrow key is pressed
 
-    var trail = "Blue";
-    var marker = "Purple";
+    var trail = "Blue";		// trail color
+    var marker = "Purple";	// marker color
 
     /**
      * START
@@ -61,8 +61,10 @@
 
     /**
      * doKeyDown moves the marker when an arrow key is pressed
+     * or requests a hint.
      */
     var doKeyDown = function(evt) {
+	hint(false); // Hide hint on next keypress
         switch (evt.keyCode) {
         case 38:  // Up arrow was pressed
             move("up");
@@ -76,7 +78,10 @@
         case 39:  // Right arrow was pressed
             move("right");
             break;
-        }
+        case 72: // 'h' was pressed
+            hint(true);
+            break;
+	}
     }
 
     /**
@@ -88,6 +93,19 @@
         ctx.rect(x,y,w,h);
         ctx.closePath();
         ctx.fill();
+    }
+
+    /**
+     * TODO
+     */
+    var hint = function(show) {
+        var msg;
+        if(show) {
+            msg = "TODO";
+        } else {
+            msg = "";
+        }
+        document.getElementById("hint").value = msg;
     }
 
     /**
@@ -112,7 +130,7 @@
             console.log("isWaLL: " + direction + " is an invalid direction");
             break;
         }
-	// Return true if pixel is black
+        // Return true if pixel is black
         return pixel[0] === 0 && pixel[1] === 0 && pixel[2] === 0 && pixel[3] === 255;
     }
 
@@ -120,7 +138,7 @@
      * move the marker in the given direction if there is no wall in the way.
      */
     var move = function(direction) {
-	    // Draw the previous marker blue
+        // Draw the previous marker blue
         draw(trail);
         switch(direction) {
         case "up":
@@ -147,8 +165,8 @@
             console.log("move: " + direction + " is an invalid direction");
             break;
         }
-	// Draw the marker purple
-	draw(marker);
+        // Draw the marker purple
+        draw(marker);
     }
 
     /**
