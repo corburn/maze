@@ -29,6 +29,8 @@
     var trail = "Blue";		// trail color
     var marker = "Purple";	// marker color
 
+    var path = [];		// path taken through maze
+
     /**
      * START
      *
@@ -128,7 +130,7 @@
             break;
         default:
             console.log("isWaLL: " + direction + " is an invalid direction");
-            break;
+	    return;
         }
         // Return true if pixel is black
         return pixel[0] === 0 && pixel[1] === 0 && pixel[2] === 0 && pixel[3] === 255;
@@ -163,14 +165,27 @@
             break;
         default:
             console.log("move: " + direction + " is an invalid direction");
-            break;
+            return;
         }
+
+	// record path taken through the maze
+	// TODO: reduce potential array length by only recording when the current
+	// position is different from the previous position. They would be the same
+	// if a wall was in the way.
+	path.push(x);
+	path.push(y);
+
         // Draw the marker purple
         draw(marker);
     }
 
     /**
-     * TODO
+     * Tremaux's maze solving algorithm. A direction is chosen and the path is marked
+     * with one color if this is the first traversal or a second color if this is
+     * the second traversal. At intersections, a path that hasn't been taken is chosen
+     * at random. If there is no unmarked path and the current path has only been marked
+     * once turn around, else choose a path with the fewest marks. Paths marked exactly
+     * once lead back to the start.
      */
     var tremaux = function(dir) {
         if(!isWall(dir)) {
@@ -191,7 +206,7 @@
                 break;
             default:
                 console.log("pathFinder: " + dir + " is an invalid direction");
-                break;
+		return;
             }
         }
         pathFinder(dir);
