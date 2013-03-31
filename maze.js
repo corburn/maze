@@ -58,39 +58,26 @@
 
     /**
      * doKeyDown moves the marker when an arrow key is pressed
-     * if there is no wall in the way.
      */
     var doKeyDown = function(evt) {
-        // Draw previous markers blue
-        draw("Blue");
         switch (evt.keyCode) {
         case 38:  /* Up arrow was pressed */
-            if (y - dy > 0 && !isWall("up")) {
-                y -= dy;
-            }
+            move("up");
             break;
         case 40:  /* Down arrow was pressed */
-            if (y + h + dy < img.width && !isWall("down")) {
-                y += dy;
-            }
+            move("down");
             break;
         case 37:  /* Left arrow was pressed */
-            if (x - dx > 0 && !isWall("left")) {
-                x -= dx;
-            }
+            move("left");
             break;
         case 39:  /* Right arrow was pressed */
-            if (x + w + dx < img.width && !isWall("right")) {
-                x += dx;
-            }
+            move("right");
             break;
         }
-        // Draw the marker purple
-        draw("Purple");
     }
 
     /**
-     * draw draws the marker at the current position.
+     * draw the marker at the current position.
      */
     var draw = function(color) {
         ctx.fillStyle = color;
@@ -101,7 +88,7 @@
     }
 
     /**
-     * isWall returns true if there is a maze wall in the direction indicated.
+     * isWall returns true if there is a maze wall in the given direction.
      */
     var isWall = function(direction) {
         var gap = 2; // gap between marker and wall
@@ -119,10 +106,74 @@
             var pixel = ctx.getImageData(x + w + gap, y, 1, 1).data;
             break;
         default:
-            console.log(direction + " is an invalid direction");
+            console.log("isWaLL: " + direction + " is an invalid direction");
             break;
         }
+	// Return true if pixel is black
         return pixel[0] === 0 && pixel[1] === 0 && pixel[2] === 0 && pixel[3] === 255;
+    }
+
+    /**
+     * move the marker in the given direction if there is no wall in the way.
+     */
+    var move = function(direction) {
+	    // Draw the previous marker blue
+        draw("Blue");
+        switch(direction) {
+        case "up":
+            if (y - dy > 0 && !isWall("up")) {
+                y -= dy;
+            }
+            break;
+        case "down":
+            if (y + h + dy < canvas.width && !isWall("down")) {
+                y += dy;
+            }
+            break;
+        case "left":
+            if (x - dx > 0 && !isWall("left")) {
+                x -= dx;
+            }
+            break;
+        case "right":
+            if (x + w + dx < canvas.width && !isWall("right")) {
+                x += dx;
+            }
+            break;
+        default:
+            console.log("move: " + direction + " is an invalid direction");
+            break;
+        }
+	// Draw the marker purple
+	draw("Purple");
+    }
+
+    /**
+     * TODO
+     */
+    var pathFinder = function(dir) {
+        if(!isWall(dir)) {
+            move(dir);
+        } else {
+            switch(dir) {
+            case "up":
+                dir = "right";
+                break;
+            case "right":
+                dir = "left"
+                      break;
+            case "left":
+                dir = "down";
+                break;
+            case "down":
+                dir = "up";
+                break;
+            default:
+                console.log("pathFinder: " + dir + " is an invalid direction");
+                break;
+            }
+        }
+        pathFinder(dir);
     }
 
 })();
