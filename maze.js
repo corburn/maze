@@ -113,6 +113,34 @@
     }
 
     /**
+     * getPixel returns the pixel 'gap' pixels from the marker in the given direction.
+     *
+     * @param direction the direction to check
+     * @param gap the number of pixels from the marker
+     */
+    var getPixel = function(direction, gap) {
+        switch(direction) {
+        case Direction["up"]:
+            var pixel = ctx.getImageData(x, y - gap, 1, 1).data;
+            break;
+        case Direction["down"]:
+            var pixel = ctx.getImageData(x, y + h + gap, 1, 1).data;
+            break;
+        case Direction["left"]:
+            var pixel = ctx.getImageData(x - gap, y, 1, 1).data;
+            break;
+        case Direction["right"]:
+            var pixel = ctx.getImageData(x + w + gap, y, 1, 1).data;
+            break;
+        default:
+            console.log("isWaLL: " + direction + " is an invalid direction");
+            return;
+        }
+	return pixel;
+    }
+
+
+    /**
      * hint toggles hint.
      *
      * @param show display hint when true
@@ -137,23 +165,7 @@
      */
     var isWall = function(direction) {
         var gap = 2; // gap between marker and wall
-        switch(direction) {
-        case Direction["up"]:
-            var pixel = ctx.getImageData(x, y - gap, 1, 1).data;
-            break;
-        case Direction["down"]:
-            var pixel = ctx.getImageData(x, y + h + gap, 1, 1).data;
-            break;
-        case Direction["left"]:
-            var pixel = ctx.getImageData(x - gap, y, 1, 1).data;
-            break;
-        case Direction["right"]:
-            var pixel = ctx.getImageData(x + w + gap, y, 1, 1).data;
-            break;
-        default:
-            console.log("isWaLL: " + direction + " is an invalid direction");
-            return;
-        }
+	var pixel = getPixel(direction, gap);
         // Return true if pixel is black
         return compare(pixel,[0,0,0,255]);
         //return false; // TODO Disable collision detection for debugging
