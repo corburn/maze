@@ -15,25 +15,42 @@
 /**
  * TODO
  */
-(function() {			// define everything in a scoping function instead of clobbering window
-    var canvas;			// maze canvas element
-    var ctx;			// canvas context
-    var img;			// maze image
-    //var worker;		// TODO
-    //var threaded = true;	// TODO
+(function() {
 
-    var w = 4;			// width of marker
-    var h = 4;			// height of marker
-    var x = 5;			// marker x position
-    var y = 7;			// marker y postion
-    var dx = w + w;		// how much x is changed when an arrow key is pressed
-    var dy = h + h;		// how much y is changed when an arrow key is pressed
+	// TODO
+    // Check for web worker support
+    if(typeof(Worker)==="undefined") {
+		alert("Your browser does not support web workers");
+		return;
+    }
 
-    var path = [];		// path taken through maze
+	// maze canvas element
+    var canvas = document.getElementById('maze');
+	// canvas context
+    var ctx = canvas.getContext('2d');
+	// maze image
+    var maze = new Image();
+	// TODO
+    var worker = new Worker("worker.js");
 
-    var marker = "Purple";	// marker color
-    var trail = "Yellow";	// trail color
-
+	// width of marker
+    var w = 4;
+	// height of marker
+    var h = 4;
+	// marker x position
+    var x = 5;
+	// marker y postion
+    var y = 7;
+	// how much x is changed when an arrow key is pressed
+    var dx = w + w;
+	// how much y is changed when an arrow key is pressed
+    var dy = w + w;
+	// path taken through maze
+    var path = [];
+	// marker color
+    var marker = "Purple";
+	// trail color
+    var trail = "Yellow";
     var Direction = {"left":0,"up":1,"right":2,"down":3};
 	// exit coordinates TODO evaluate instead of static
     var Exit = {"x":797,"y":799};
@@ -43,29 +60,20 @@
      *
      * The program starts when the maze loads.
      */
-    img = new Image();
-    img.src = "maze.png";
-    img.onload = function() {
-        // Initialize pathfinder worker
-        //if(typeof(Worker)!=="undefined") {
-        //    worker = new Worker('worker.js');
-        //} else {
-        //    alert("Hints disabled: Your browser does not support Web Workers.");
-        //    threaded = false;
-        //}
-
-        // Initialize canvas
-        canvas = document.getElementById('maze');
-        ctx = canvas.getContext('2d');
-
+    maze.src = "maze.png";
+    maze.onload = function() {
         // Scale canvas to maze
         canvas.width = this.width;
         canvas.height = this.height;
         // Draw maze
-        ctx.drawImage(img,0,0);
+        ctx.drawImage(maze,0,0);
+        // Draw marker
+        draw(marker);
 
         // Listen for arrow keys
         window.addEventListener('keydown',doKeyDown,true);
+
+		console.log(ctx.getImageData(0,0,maze.width,maze.height));
     }
 
     /**
@@ -73,27 +81,27 @@
      * rgba = [red,green,blue,alpha]
      */
     var compare = function(pixel,rgba) {
-	return pixel[0] === rgba[0] && pixel[1] === rgba[1] && pixel[2] === rgba[2] && pixel[3] === rgba[3];
+        return pixel[0] === rgba[0] && pixel[1] === rgba[1] && pixel[2] === rgba[2] && pixel[3] === rgba[3];
     }
 
     /**
      * doKeyDown moves the marker when an arrow key is pressed
-     * or requests a hint.
+     * or requests a hint when 'h' is pressed.
      */
     var doKeyDown = function(evt) {
         hint(false);	// Hide hint on next keypress
         switch (evt.keyCode) {
         case 38:	// Up arrow was pressed
-            move(Direction["up"], trail);
+            move(Direction["up"]);
             break;
         case 40:	// Down arrow was pressed
-            move(Direction["down"], trail);
+            move(Direction["down"]);
             break;
         case 37:	// Left arrow was pressed
-            move(Direction["left"], trail);
+            move(Direction["left"]);
             break;
         case 39:	// Right arrow was pressed
-            move(Direction["right"], trail);
+            move(Direction["right"]);
             break;
         case 72:	// 'h' was pressed
             hint(true);
@@ -136,7 +144,7 @@
             console.log("isWaLL: " + direction + " is an invalid direction");
             return;
         }
-	return pixel;
+        return pixel;
     }
 
 
@@ -149,8 +157,8 @@
         var msg;
         if(show) {
             var tmpTrail = trail;
-            tremaux(Direction["up"]);
-	    trail = tmpTrail;
+            //tremaux(Direction["up"]);
+            rightHand();
             msg = "TODO";
         } else {
             msg = "";
@@ -165,7 +173,7 @@
      */
     var isWall = function(direction) {
         var gap = 2; // gap between marker and wall
-	var pixel = getPixel(direction, gap);
+        var pixel = getPixel(direction, gap);
         // Return true if pixel is black
         return compare(pixel,[0,0,0,255]);
         //return false; // TODO Disable collision detection for debugging
@@ -179,7 +187,7 @@
      * @param trail a CSS color value, gradient, or pattern object describing
      * the trail to leave behind
      */
-    var move = function(direction, trail) {
+    var move = function(direction) {
         // Leave a trail of previous markers
         draw(trail);
         switch(direction) {
@@ -212,7 +220,7 @@
         // TODO: reduce potential array length by only recording when the current
         // position is different from the previous position. They would be the same
         // if a wall was in the way.
-	// TODO Move this to doKeyDown function
+        // TODO Move this to doKeyDown function
         path.push(x);
         path.push(y);
 
@@ -237,20 +245,46 @@
         var markedTwice = function(pixel) {
             return compare(pixel,[255,0,0,255]);
         }
-	var onceTrail = "Green";			// first traversal color
-	var twiceTrail = "Red";				// second traversal color
+        var onceTrail = "Green";			// first traversal color
+        var twiceTrail = "Red";				// second traversal color
         var relativeL = (direction + 4 - 1) % 4;	// relative left
         var relativeR = (direction + 4 + 1) % 4;	// relative right
 
         // Base case: stop tracing at the maze exit
-        if(x === Exit['x'] && y === Exit['y']) return;
-        while(!isWall(direction)) {
-            move(direction, onceTrail);
+        while(x !== Exit['x'] && y !== Exit['y']) {
+            while(!isWall(direction)) {
+                move(direction);
+            }
+            if(isWall(relativeL)) {}
+
+
+            alert("");
         }
-	if(isWall(relativeL)){}
+    }
 
-
-        alert("");
+    /**
+     * TODO
+     */
+    var rightHand = function() {
+        direction = Direction["up"];
+        relativeR = Direction["right"];
+        while(x !== Exit['x'] && y !== Exit['y']) {
+            if(isWall(relativeR) && !isWall(direction)) {
+                move(direction);
+                console.log("isWall(R): " + isWall(relativeR) + " !isWall(direction): " + !isWall(direction));
+                continue;
+            }
+            for(i=1; i<4; i++) {
+                direction = (direction + i) % 4;
+                if(isWall(direction)) {
+                    continue;
+                }
+                relativeR = (direction + 1) % 4;
+                move(direction);
+                break;
+            }
+        }
+        console.log("done");
     }
 
 })();
