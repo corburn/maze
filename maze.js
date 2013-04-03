@@ -17,42 +17,42 @@
  */
 (function() {
 
-	// TODO
+    // TODO
     // Check for web worker support
     if(typeof(Worker)==="undefined") {
-		alert("Your browser does not support web workers");
-		return;
+        alert("Your browser does not support web workers");
+        return;
     }
 
-	// maze canvas element
+    // maze canvas element
     var canvas = document.getElementById('maze');
-	// canvas context
+    // canvas context
     var ctx = canvas.getContext('2d');
-	// maze image
+    // maze image
     var maze = new Image();
-	// TODO
+    // TODO
     var worker = new Worker("worker.js");
 
-	// width of marker
-    var w = 4;
-	// height of marker
-    var h = 4;
-	// marker x position
+	// size of marker
+	var m = 4;
+    // marker x position
     var x = 5;
-	// marker y postion
+    // marker y postion
     var y = 7;
-	// how much x is changed when an arrow key is pressed
-    var dx = w + w;
-	// how much y is changed when an arrow key is pressed
-    var dy = w + w;
-	// path taken through maze
+    // how much x is changed when an arrow key is pressed
+    var dx = m + m;
+    // how much y is changed when an arrow key is pressed
+    var dy = m + m;
+    // path taken through maze
     var path = [];
-	// marker color
+    // marker color
     var marker = "Purple";
-	// trail color
-    var trail = "Yellow";
+    // trail color
+    var trail = "Green";
+    // Direction enum
     var Direction = {"left":0,"up":1,"right":2,"down":3};
-	// exit coordinates TODO evaluate instead of static
+    // exit coordinates
+    // TODO evaluate instead of static
     var Exit = {"x":797,"y":799};
 
     /**
@@ -69,11 +69,8 @@
         ctx.drawImage(maze,0,0);
         // Draw marker
         draw(marker);
-
         // Listen for arrow keys
         window.addEventListener('keydown',doKeyDown,true);
-
-		console.log(ctx.getImageData(0,0,maze.width,maze.height));
     }
 
     /**
@@ -107,6 +104,13 @@
             hint(true);
             break;
         }
+
+        // Record path taken through the maze
+        // TODO: reduce potential array length by only recording when the current
+        // position is different from the previous position. They would be the same
+        // if a wall was in the way.
+        //path.push(x);
+        //path.push(y);
     }
 
     /**
@@ -115,7 +119,7 @@
     var draw = function(color) {
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.rect(x,y,w,h);
+        ctx.rect(x,y,m,m);
         ctx.closePath();
         ctx.fill();
     }
@@ -127,23 +131,35 @@
      * @param gap the number of pixels from the marker
      */
     var getPixel = function(direction, gap) {
+        // TODO document the use of ctx to draw debugging pixels
+        ctx.beginPath();
         switch(direction) {
         case Direction["up"]:
+            ctx.fillStyle = "Green";
             var pixel = ctx.getImageData(x, y - gap, 1, 1).data;
+            ctx.rect(x+1,y-gap,1,1);
             break;
         case Direction["down"]:
-            var pixel = ctx.getImageData(x, y + h + gap, 1, 1).data;
+            ctx.fillStyle = "Orange";
+            var pixel = ctx.getImageData(x, y + (m - 1) + gap, 1, 1).data;
+            ctx.rect(x+1,y+m-1+gap,1,1);
             break;
         case Direction["left"]:
+            ctx.fillStyle = "Red";
             var pixel = ctx.getImageData(x - gap, y, 1, 1).data;
+            ctx.rect(x-gap,y+1,1,1);
             break;
         case Direction["right"]:
-            var pixel = ctx.getImageData(x + w + gap, y, 1, 1).data;
+            ctx.fillStyle = "Blue";
+            var pixel = ctx.getImageData(x + (m - 1) + gap, y, 1, 1).data;
+            ctx.rect(x+m-1+gap,y+1,1,1);
             break;
         default:
             console.log("isWaLL: " + direction + " is an invalid direction");
             return;
         }
+        ctx.closePath();
+        ctx.fill();
         return pixel;
     }
 
@@ -156,9 +172,8 @@
     var hint = function(show) {
         var msg;
         if(show) {
-            var tmpTrail = trail;
-            //tremaux(Direction["up"]);
-            rightHand();
+            tremaux();
+            //rightHand();
             msg = "TODO";
         } else {
             msg = "";
@@ -188,41 +203,28 @@
      * the trail to leave behind
      */
     var move = function(direction) {
+		// 
+		if(isWall(direction)) return;
+
         // Leave a trail of previous markers
         draw(trail);
         switch(direction) {
         case Direction["up"]:
-            if (y - dy > 0 && !isWall(direction)) {
-                y -= dy;
-            }
+            y -= dy;
             break;
         case Direction["down"]:
-            if (y + h + dy < canvas.width && !isWall(direction)) {
-                y += dy;
-            }
+            y += dy;
             break;
         case Direction["left"]:
-            if (x - dx > 0 && !isWall(direction)) {
-                x -= dx;
-            }
+            x -= dx;
             break;
         case Direction["right"]:
-            if (x + w + dx < canvas.width && !isWall(direction)) {
-                x += dx;
-            }
+            x += dx;
             break;
         default:
             console.log("move: " + direction + " is an invalid direction");
             return;
         }
-
-        // Record path taken through the maze
-        // TODO: reduce potential array length by only recording when the current
-        // position is different from the previous position. They would be the same
-        // if a wall was in the way.
-        // TODO Move this to doKeyDown function
-        path.push(x);
-        path.push(y);
 
         // Draw the marker a different color so it can be distinguished from the trail
         draw(marker);
@@ -235,46 +237,69 @@
      * If there is no unmarked path and the current path has only been marked once,
      * turn around. Otherwise, choose a path with the fewest marks. Paths marked exactly
      * once lead back to the start.
-     *
-     * @param direction the direction to start tracing
      */
-    var tremaux = function(direction) {
+    var tremaux = function() {
+		// markedOnce returns true if the pixel is marked with the first traversal color
         var markedOnce = function(pixel) {
-            return compare(pixel,[0,255,0,255]);
+            return compare(pixel,[0,128,0,255]);
         }
+		// markedTwice returns true if the pixel is marked with the second traversal color
         var markedTwice = function(pixel) {
             return compare(pixel,[255,0,0,255]);
         }
-        var onceTrail = "Green";			// first traversal color
-        var twiceTrail = "Red";				// second traversal color
-        var relativeL = (direction + 4 - 1) % 4;	// relative left
-        var relativeR = (direction + 4 + 1) % 4;	// relative right
+        // first traversal color
+        var onceTrail = "rgba(0,128,0,255)";;
+        // second traversal color
+        var twiceTrail = "rgba(255,0,0,255)";
+        var direction = Direction["up"];
+        var pixel;
 
-        // Base case: stop tracing at the maze exit
-        while(x !== Exit['x'] && y !== Exit['y']) {
-            while(!isWall(direction)) {
-                move(direction);
+		// Search until we find the exit
+        while(x !== Exit['x'] || y !== Exit['y']) {
+			// Leave a trail of paths explored.
+            trail = onceTrail;
+			// Check all directions twice. The first check finds unexplored paths.
+			// The second check finds the way back to the solution path, marking
+			// the area behind us as a dead end.
+            for(var i = 0; i < 8; i++) {
+                direction = (direction + i) % 4;
+                if(isWall(direction)) continue;
+                pixel = getPixel(direction, m + 1);
+				// Find unexplored paths
+                if(!markedOnce(pixel) && !markedTwice(pixel)) break;
+				// 
+                if(i > 3 && !markedTwice(pixel)) break;
             }
-            if(isWall(relativeL)) {}
-
-
-            alert("");
+            if(markedOnce(pixel)) {
+                trail = twiceTrail;
+                path.pop();
+            } else {
+            	path.push(direction);
+			}
+            move(direction);
         }
+        ctx.drawImage(maze,0,0);
+		x = 5;
+		y = 7;
+		path.forEach(move);
     }
 
     /**
-     * TODO
+     * rightHand solves the maze using the Right Hand Rule algorithm.
+     * The Right Hand Rule fails if it hits a circular path.
      */
     var rightHand = function() {
         direction = Direction["up"];
         relativeR = Direction["right"];
-        while(x !== Exit['x'] && y !== Exit['y']) {
-            if(isWall(relativeR) && !isWall(direction)) {
+        // Search until we find the exit
+        while(x !== Exit['x'] || y !== Exit['y']) {
+            // While there's nothing in the way and a wall to the right, move forward
+            if(!isWall(direction) && isWall(relativeR)) {
                 move(direction);
-                console.log("isWall(R): " + isWall(relativeR) + " !isWall(direction): " + !isWall(direction));
                 continue;
             }
-            for(i=1; i<4; i++) {
+            // Move forward in the first open path to the right, left, or back
+            for(var i = 1; i < 4; i++) {
                 direction = (direction + i) % 4;
                 if(isWall(direction)) {
                     continue;
@@ -284,7 +309,6 @@
                 break;
             }
         }
-        console.log("done");
     }
 
 })();
