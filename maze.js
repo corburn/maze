@@ -33,27 +33,29 @@
     // TODO
     var worker = new Worker("worker.js");
 
+    // Direction enum
+    var Direction = {"left":0,"up":1,"right":2,"down":3};
+    // start coordinates
+    var Start = {"x":5,"y":7};
+    // exit coordinates
+    var Exit = {"x":797,"y":799};
+
 	// size of marker
 	var m = 4;
     // marker x position
-    var x = 5;
+    var x = Start['x'];
     // marker y postion
-    var y = 7;
+    var y = Start['y'];
     // how much x is changed when an arrow key is pressed
     var dx = m + m;
     // how much y is changed when an arrow key is pressed
     var dy = m + m;
-    // path taken through maze
-    var path = [];
+	// path taken
+	var path = [];
     // marker color
     var marker = "Purple";
     // trail color
     var trail = "Green";
-    // Direction enum
-    var Direction = {"left":0,"up":1,"right":2,"down":3};
-    // exit coordinates
-    // TODO evaluate instead of static
-    var Exit = {"x":797,"y":799};
 
     /**
      * START
@@ -75,6 +77,9 @@
 
     /**
      * compare returns true if the pixel is the same color as the rgba array.
+	 *
+	 * @param pixel a pixel object
+	 * @param rgba an array representing a color using rgba values
      * rgba = [red,green,blue,alpha]
      */
     var compare = function(pixel,rgba) {
@@ -84,37 +89,42 @@
     /**
      * doKeyDown moves the marker when an arrow key is pressed
      * or requests a hint when 'h' is pressed.
+	 *
+	 * @param evt the event passed by the event listener
      */
     var doKeyDown = function(evt) {
-        hint(false);	// Hide hint on next keypress
+		var direction = -1;
+
+		// Hide hint on next keypress
+        hint(false);
         switch (evt.keyCode) {
         case 38:	// Up arrow was pressed
-            move(Direction["up"]);
+			direction = Direction["up"];
             break;
         case 40:	// Down arrow was pressed
-            move(Direction["down"]);
+			direction = Direction["down"];
             break;
         case 37:	// Left arrow was pressed
-            move(Direction["left"]);
+			direction = Direction["left"];
             break;
         case 39:	// Right arrow was pressed
-            move(Direction["right"]);
+			direction = Direction["right"];
             break;
         case 72:	// 'h' was pressed
             hint(true);
             break;
         }
-
-        // Record path taken through the maze
-        // TODO: reduce potential array length by only recording when the current
-        // position is different from the previous position. They would be the same
-        // if a wall was in the way.
-        //path.push(x);
-        //path.push(y);
+		// If an arrow key was pressed, move in that direction and record it in the path array
+		if(direction != -1) {
+			move(direction);
+			path.push(direction);
+		}
     }
 
     /**
      * draw the marker at the current position.
+	 *
+	 * @param color the marker color
      */
     var draw = function(color) {
         ctx.fillStyle = color;
@@ -131,54 +141,69 @@
      * @param gap the number of pixels from the marker
      */
     var getPixel = function(direction, gap) {
-        // TODO document the use of ctx to draw debugging pixels
-        ctx.beginPath();
+		var pixel;
         switch(direction) {
         case Direction["up"]:
-            ctx.fillStyle = "Green";
-            var pixel = ctx.getImageData(x, y - gap, 1, 1).data;
-            ctx.rect(x+1,y-gap,1,1);
+            pixel = ctx.getImageData(x, y - gap, 1, 1).data;
             break;
         case Direction["down"]:
-            ctx.fillStyle = "Orange";
-            var pixel = ctx.getImageData(x, y + (m - 1) + gap, 1, 1).data;
-            ctx.rect(x+1,y+m-1+gap,1,1);
+            pixel = ctx.getImageData(x, y + (m - 1) + gap, 1, 1).data;
             break;
         case Direction["left"]:
-            ctx.fillStyle = "Red";
-            var pixel = ctx.getImageData(x - gap, y, 1, 1).data;
-            ctx.rect(x-gap,y+1,1,1);
+            pixel = ctx.getImageData(x - gap, y, 1, 1).data;
             break;
         case Direction["right"]:
-            ctx.fillStyle = "Blue";
-            var pixel = ctx.getImageData(x + (m - 1) + gap, y, 1, 1).data;
-            ctx.rect(x+m-1+gap,y+1,1,1);
+            pixel = ctx.getImageData(x + (m - 1) + gap, y, 1, 1).data;
             break;
         default:
             console.log("isWaLL: " + direction + " is an invalid direction");
             return;
         }
-        ctx.closePath();
-        ctx.fill();
         return pixel;
     }
 
 
     /**
      * hint toggles hint.
+	 * TODO improve performance by only calculating as far as necessary.
+	 * Perhaps a breadth first algorithm? Current runtime is approximately
+	 * 1 second on the dev machine.
      *
      * @param show display hint when true
      */
     var hint = function(show) {
-        var msg;
         if(show) {
-            tremaux();
-            //rightHand();
-            msg = "TODO";
+			var direction;
+        	document.getElementById("hint").value = "Calculating hint...";
+			// Calculate path from current position to exit
+            solution = tremaux();
+			// Restore canvas state
+			x = Start['x'];
+			y = Start['y'];
+        	ctx.drawImage(maze,0,0);
+			draw(marker);
+			path.forEach(move);
+			// Convert first solution path direction to a string
+			switch(solution[0]) {
+				case Direction["up"]:
+					direction = "up";
+					break;
+				case Direction["down"]:
+					direction = "down";
+					break;
+				case Direction["left"]:
+					direction = "left";
+					break;
+				case Direction["right"]:
+					direction = "right";
+					break;
+			}
+			// Display hint
+        	document.getElementById("hint").value = direction;
         } else {
-            msg = "";
+			// Hide hint
+        	document.getElementById("hint").value = "";
         }
-        document.getElementById("hint").value = msg;
     }
 
     /**
@@ -195,19 +220,18 @@
     }
 
     /**
-     * move the marker in the given direction if there is no maze border or wall
-     * in the way.
+     * move the marker in the given direction if there is no wall in the way.
      *
      * @param direction the direction to move
-     * @param trail a CSS color value, gradient, or pattern object describing
-     * the trail to leave behind
      */
     var move = function(direction) {
-		// 
+		// Cannot move, there is a wall
 		if(isWall(direction)) return;
 
         // Leave a trail of previous markers
         draw(trail);
+
+		// Move the marker
         switch(direction) {
         case Direction["up"]:
             y -= dy;
@@ -251,8 +275,13 @@
         var onceTrail = "rgba(0,128,0,255)";;
         // second traversal color
         var twiceTrail = "rgba(255,0,0,255)";
+		var solution = [];
+		// an arbitrary starting direction
         var direction = Direction["up"];
         var pixel;
+
+		// Redraw the maze so nothing interferes with the search
+        ctx.drawImage(maze,0,0);
 
 		// Search until we find the exit
         while(x !== Exit['x'] || y !== Exit['y']) {
@@ -267,21 +296,25 @@
                 pixel = getPixel(direction, m + 1);
 				// Find unexplored paths
                 if(!markedOnce(pixel) && !markedTwice(pixel)) break;
-				// 
+				// On the second check, find a path that hasn't been marked as a dead end
                 if(i > 3 && !markedTwice(pixel)) break;
             }
+			// If retracing path, mark it as a dead end and remove it from the solution array 
             if(markedOnce(pixel)) {
                 trail = twiceTrail;
-                path.pop();
+                solution.pop();
             } else {
-            	path.push(direction);
+				// Add the current path to the solution
+            	solution.push(direction);
 			}
             move(direction);
         }
-        ctx.drawImage(maze,0,0);
-		x = 5;
-		y = 7;
-		path.forEach(move);
+		// Redraw maze and replay solution path
+		//x = Start['x'];
+		//y = Start['y'];
+        //ctx.drawImage(maze,0,0);
+		//solution.forEach(move);
+		return solution;
     }
 
     /**
