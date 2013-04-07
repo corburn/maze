@@ -3,12 +3,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -56,8 +56,8 @@
     var marker = "Purple";
     // trail color
     var trail = "Yellow";
-	// rgba wall color
-	var wallColor = [0,0,0,255];
+    // rgba wall color
+    var wallColor = [0,0,0,255];
 
     /**
      * START
@@ -120,10 +120,10 @@
         // If an arrow key was pressed and the marker moved
         if(direction != null && move(direction)) {
             if(direction == solution[0]) {
-				// If it was in the correct direction remove it from the solution path
+                // If it was in the correct direction remove it from the solution path
                 solution.shift();
             } else {
-				// else add the opposite direction to the solution path
+                // else add the opposite direction to the solution path
                 solution.unshift((direction+2)%4);
             }
         }
@@ -230,7 +230,7 @@
      * move the marker in the given direction if there is no wall in the way.
      *
      * @param direction the direction to move
-	 * @return true if move successful
+     * @return true if move successful
      */
     var move = function(direction) {
         // Cannot move, there is a wall
@@ -260,7 +260,7 @@
 
         // Draw the marker a different color so it can be distinguished from the trail
         draw(marker);
-		return true;
+        return true;
     }
 
     /**
