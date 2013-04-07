@@ -1,18 +1,28 @@
 /**
- * Required:
- * The input to your program is the included maze image. The start of the maze
- * is indicated by a green square and the end of the maze is represented with a
- * red square. Provide a user interface to allow a user to traverse the maze.
- * Solutions could consist of text based, web based, 2D, 3D, or any other
- * interesting interaction modality.
- *
- * Optional:
- * Provide a meaningful hint when requested by the user.
- * Generate a maze, randomly or based on interesting material, which can be used
- * as input to this program. The more interesting the maze, the more points given.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /**
+ * Maze uses an HTML5 canvas to draw a maze image and provide an interface for
+ * users to navigate the maze using arrow keys. The user can request a hint by
+ * pressing 'h'.
+ *
+ * Maze has two primary design flaws. The first is that it makes several assumptions
+ * about the maze image such as the location of the beginning and end as well as the
+ * width and shape of the passages. Second, it does not use a data structure. This
+ * makes the current implementation simple, but fragile and difficult to extend.
+ *
  * @author Jason Travis
  */
 (function() {
@@ -46,6 +56,8 @@
     var marker = "Purple";
     // trail color
     var trail = "Yellow";
+	// rgba wall color
+	var wallColor = [0,0,0,255];
 
     /**
      * START
@@ -211,7 +223,7 @@
         var gap = 2; // gap between marker and wall
         var pixel = getPixel(direction, gap);
         // Return true if pixel is black
-        return compare(pixel,[0,0,0,255]);
+        return compare(pixel,wallColor);
     }
 
     /**
