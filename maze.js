@@ -13,7 +13,7 @@
  */
 
 /**
- * TODO
+ * @author Jason Travis
  */
 (function() {
     // preprocessed solution path
@@ -45,7 +45,7 @@
     // marker color
     var marker = "Purple";
     // trail color
-    var trail = "Green";
+    var trail = "Yellow";
 
     /**
      * START
@@ -178,7 +178,7 @@
             //ctx.drawImage(maze,0,0);
             //draw(marker);
             //path.forEach(move);
-            // Convert first solution path direction to a string
+            // Parse next solution direction to a string
             switch(solution[0]) {
             case Direction["up"]:
                 direction = "up";
@@ -212,7 +212,6 @@
         var pixel = getPixel(direction, gap);
         // Return true if pixel is black
         return compare(pixel,[0,0,0,255]);
-        //return false; // TODO Disable collision detection for debugging
     }
 
     /**
@@ -291,7 +290,7 @@
             trail = onceTrail;
             // Check all directions twice. The first check finds unexplored paths.
             // The second check finds the way back to the solution path, marking
-            // the area behind us as a dead end.
+            // the path as a dead end.
             for(var i = 0; i < 8; i++) {
                 direction = (direction + i) % 4;
                 if(isWall(direction)) continue;
@@ -321,7 +320,6 @@
 
     /**
      * rightHand solves the maze using the Right Hand Rule algorithm.
-     * The Right Hand Rule fails if it hits a circular path.
      */
     var rightHand = function() {
         direction = Direction["up"];
