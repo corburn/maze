@@ -117,15 +117,22 @@
             hint(true);
             break;
         }
-        // If an arrow key was pressed and the marker moved
-        if(direction != null && move(direction)) {
-            if(direction == solution[0]) {
-                // If it was in the correct direction remove it from the solution path
-                solution.shift();
-            } else {
-                // else add the opposite direction to the solution path
-                solution.unshift((direction+2)%4);
-            }
+        // If an arrow key was pressed
+        if(direction != null) {
+            var relativeR = (direction+1)%4;
+            var relativeL = (direction+3)%4;
+            // move forward until we reach an intersection
+            do {
+                // or hit a wall
+                if(!move(direction)) break;
+                if(direction == solution[0]) {
+                    // If it was in the correct direction remove it from the solution path
+                    solution.shift();
+                } else {
+                    // else add the opposite direction to the solution path
+                    solution.unshift((direction+2)%4);
+                }
+            } while(isWall(relativeR) && isWall(relativeL));
         }
     }
 
