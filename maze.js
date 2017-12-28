@@ -75,6 +75,19 @@
         draw(marker);
         // Listen for arrow keys
         window.addEventListener('keydown',doKeyDown,true);
+        
+        // Walk through the solution when the 'solve' button is pressed.
+	// Abort the walk through when the user presses a key.
+        window.addEventListener('keydown',function() {clearInterval(interval)},true);
+        document.getElementById('solve').addEventListener('click', function(e) {
+            interval = setInterval(function(){
+                if (!solution) {
+                    clearInterval(interval);
+                } else {
+                    move(solution.shift());
+                }
+            }, 500);
+        });
     }
 
     /**
